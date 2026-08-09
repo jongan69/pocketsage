@@ -46,7 +46,7 @@ async function writeFile(path: string, content: string): Promise<void> {
 
 // ── Store ──────────────────────────────────────────────────────────────────────
 
-interface MemoryState {
+export interface MemoryState {
   manager: MemoryManager | null;
   isLoaded: boolean;
   persistentFacts: string[];

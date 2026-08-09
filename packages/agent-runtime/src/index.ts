@@ -9,15 +9,19 @@
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-// Shared base types. The tool/skill/vector types below (ToolDefinition,
-// ToolCall, ToolResult, SkillMetadata, VectorEntry, SearchResult) are re-exported
-// from their owning modules further down — the skill variants are structural
-// supersets of the `types.ts` ones (skillName, durationMs, requiresConfirmation).
+// Shared base types — the spec-shaped, model-facing types. The skill system
+// uses richer variants (skillName, durationMs, requiresConfirmation,
+// skillMdPath) which are exported under `Skill*` aliases in the Skills section
+// below.
 export type {
   Message,
   ModelTier,
   ModelInfo,
   ModelDownloadState,
+  ToolDefinition,
+  ToolCall,
+  ToolResult,
+  SkillMetadata,
   FinishReason,
   GenerationResult,
   StreamCallbacks,
@@ -86,12 +90,12 @@ export { parseSkillMd, loadSkillFromDirectory, loadSkillsFromDirectory } from '.
 export type { SkillLoaderOptions, ParsedSkillMd } from './skills/loader';
 export type {
   Skill,
-  SkillMetadata,
   Tool,
-  ToolDefinition,
   ToolParameter,
-  ToolCall,
-  ToolResult,
+  ToolDefinition as SkillToolDefinition,
+  ToolCall as SkillToolCall,
+  ToolResult as SkillToolResult,
+  SkillMetadata as RegisteredSkillMetadata,
 } from './skills/types';
 
 // ── Agent ─────────────────────────────────────────────────────────────────────

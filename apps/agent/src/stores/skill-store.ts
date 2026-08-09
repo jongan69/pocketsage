@@ -11,7 +11,7 @@ import { contactsSkill } from '@/skills/contacts/skill';
 
 export type ToolPermission = 'ask' | 'always_allow' | 'deny';
 
-interface SkillState {
+export interface SkillState {
   skills: Skill[];
   enabledSkills: Set<string>;
   toolPermissions: Record<string, ToolPermission>;

@@ -4,7 +4,7 @@ import { modelManager } from '@pocketsage/agent-runtime';
 import { readJson, writeJson } from '@/lib/persistence';
 import { STORAGE_KEYS } from '@/lib/constants';
 
-interface ModelState {
+export interface ModelState {
   models: ModelInfo[];
   downloadStates: Record<string, ModelDownloadState>;
   activeModelId: string | null;

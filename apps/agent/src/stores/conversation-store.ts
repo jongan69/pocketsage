@@ -28,7 +28,7 @@ interface ConversationRow {
   updated_at: number;
 }
 
-interface ConversationState {
+export interface ConversationState {
   conversations: Conversation[];
   activeConversationId: string | null;
   isStreaming: boolean;
