@@ -1,0 +1,26 @@
+{
+  "name": "@pocketsage/agent-runtime",
+  "version": "0.1.0",
+  "description": "On-device AI agent runtime for Expo/React Native — Llama 3.2 via ExecuTorch",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": ["src"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0"
+  },
+  "peerDependencies": {
+    "react-native-executorch": "*",
+    "expo-file-system": "*",
+    "expo-asset": "*",
+    "expo-keep-awake": "*",
+    "expo-network": "*"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

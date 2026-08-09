@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@pocketsage/agent-runtime": ["../../packages/agent-runtime/src/index.ts"]
+    }
+  },
+  "include": ["src", "nativewind-env.d.ts"]
+}

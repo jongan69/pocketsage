@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "PocketSage",
+    "slug": "pocketsage",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "pocketsage",
+    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0a0a0a" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ai.pocketsage.app",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "PocketSage uses your calendar to answer schedule questions and create events.",
+        "NSRemindersUsageDescription": "PocketSage uses reminders to set and manage your to-do items.",
+        "NSContactsUsageDescription": "PocketSage uses contacts to look up people you mention.",
+        "NSHealthShareUsageDescription": "PocketSage reads health data to answer wellness questions.",
+        "NSHealthUpdateUsageDescription": "PocketSage can write health data when you ask it to log workouts or meals."
+      }
+    },
+    "android": {
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0a0a0a" },
+      "package": "ai.pocketsage.app",
+      "permissions": [
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "READ_CONTACTS",
+        "ACTIVITY_RECOGNITION",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-calendar",
+      "expo-contacts",
+      "expo-document-picker"
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
