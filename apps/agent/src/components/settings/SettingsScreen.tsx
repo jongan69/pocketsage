@@ -10,7 +10,7 @@ import {
   MessageSquare,
   HardDrive,
   ShieldCheck,
-  Github,
+  GitBranch,
   Scale,
   FileText,
   Sparkles,
@@ -47,7 +47,7 @@ const PERMISSION_META: Record<
 
 const ABOUT_LINKS = [
   { key: 'privacy', label: 'Privacy Policy', icon: FileText, url: 'https://pocketsage.app/privacy' },
-  { key: 'github', label: 'GitHub', icon: Github, url: 'https://github.com/jonathangan/pocketsage' },
+  { key: 'github', label: 'GitHub', icon: GitBranch, url: 'https://github.com/jonathangan/pocketsage' },
   {
     key: 'licenses',
     label: 'Licenses',

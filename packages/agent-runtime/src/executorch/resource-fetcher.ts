@@ -57,6 +57,22 @@ export class AbortDownloadError extends Error {
 }
 
 /**
+ * Thrown when a download was paused via {@link ResourceFetcher.pauseActiveDownload}.
+ * The pause state is persisted, so a later `fetch` of the same source resumes
+ * instead of restarting.
+ */
+export class DownloadPausedError extends Error {
+  constructor(source?: string) {
+    super(
+      source
+        ? `Download paused: ${source}`
+        : 'The on-device model download was paused. It will resume on retry.',
+    );
+    this.name = 'PausedError';
+  }
+}
+
+/**
  * A minimal async KV store used to persist download and verification state.
  * The default in-memory implementation is process-lifetime only; host apps
  * can pass a durable adapter.
@@ -414,12 +430,14 @@ export function createResourceFetcher(
 
       activeDownload = { source, task };
 
-      let downloaded: File | null;
+      let downloaded: File | null = null;
+      let taskState: DownloadTask['state'];
       try {
         downloaded =
           task.state === 'paused'
             ? await task.resumeAsync()
             : await task.downloadAsync();
+        taskState = task.state;
       } finally {
         if (activeDownload?.task === task) activeDownload = null;
         task.release();
@@ -427,9 +445,11 @@ export function createResourceFetcher(
 
       // Pause semantics: pauseAsync() resolves the pending download with null
       // and leaves the task paused. Persist the resume state for later.
-      if (!downloaded && task.state === 'paused') {
+      // (taskState is captured before release() because release() detaches
+      // the native task.)
+      if (!downloaded && taskState === 'paused') {
         await kv.setItem(stateKey, task.savable());
-        throw new Error('The on-device model download was paused. It will resume on retry.');
+        throw new DownloadPausedError(source);
       }
       if (!downloaded || !downloaded.exists) {
         throw new Error(`Failed to fetch ExecuTorch resource from ${source}`);

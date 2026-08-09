@@ -1,5 +1,5 @@
 import type { SearchResult, VectorEntry } from '../types';
-import { createDefaultFileSystem, joinPath, type ReadWriteFileSystem } from '../utils';
+import { createDefaultFileSystem, dirname, joinPath, type ReadWriteFileSystem } from '../utils';
 import { chunkText } from './chunker';
 import { embed } from './embedder';
 import { VectorStore, type VectorStore as VectorStoreInterface } from './vector-store';
@@ -50,8 +50,9 @@ export class MemoryManager {
 
   /**
    * @param store - the vector store backing this manager's semantic memory
-   * @param globalMemoryPath - directory containing `GLOBAL.md` and
-   *   `vector-store.json`; defaults to `'memory'`
+   * @param globalMemoryPath - path to the `GLOBAL.md` fact file, or a
+   *   directory containing it (both forms are accepted); `vector-store.json`
+   *   is persisted next to `GLOBAL.md`. Defaults to `'memory/GLOBAL.md'`.
    * @param fileSystem - optional file I/O adapter; defaults to a
    *   Node/Bun-aware implementation (in-memory elsewhere)
    */
@@ -215,13 +216,26 @@ export class MemoryManager {
     }
   }
 
+  /** Number of entries currently indexed in the vector store. */
+  get size(): number {
+    return this.store.size;
+  }
+
+  /** Serialize the current vector store to stable JSON (see `save()`/`load()`). */
+  toJSON(): string {
+    return this.store.toJSON();
+  }
+
   /** Absolute path of the `GLOBAL.md` fact file. */
   private globalMdPath(): string {
-    return joinPath(this.globalMemoryPath, GLOBAL_MD_FILE);
+    const trimmed = this.globalMemoryPath.replace(/[\\/]+$/, '');
+    // Accept both a path to the GLOBAL.md file itself and a directory that
+    // contains it (different callers pass one or the other).
+    return trimmed.endsWith(GLOBAL_MD_FILE) ? trimmed : joinPath(trimmed, GLOBAL_MD_FILE);
   }
 
   /** Absolute path of the persisted vector store JSON file. */
   private vectorStorePath(): string {
-    return joinPath(this.globalMemoryPath, VECTOR_STORE_FILE);
+    return joinPath(dirname(this.globalMdPath()), VECTOR_STORE_FILE);
   }
 }

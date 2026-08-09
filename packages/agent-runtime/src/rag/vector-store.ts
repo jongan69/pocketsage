@@ -12,8 +12,8 @@ import { randomId } from '../utils';
  * Behavior notes:
  * - Entries without an `id` receive a generated unique id on `add()`.
  * - Adding an entry whose `id` already exists replaces the previous entry.
- * - Empty query vectors return `[]`. Empty or dimension-mismatched entry
- *   vectors score 0 and never crash the search.
+ * - Empty (or all-zero) query vectors return `[]`. Empty or
+ *   dimension-mismatched entry vectors score 0 and never crash the search.
  */
 export interface VectorStore {
   /** Add a single entry, generating a unique `id` when not provided. */
@@ -97,6 +97,9 @@ function createVectorStoreInternal(initialEntries: VectorEntry[]): VectorStore {
 
     async search(queryVector: number[], options?: { topK?: number }): Promise<SearchResult[]> {
       if (!Array.isArray(queryVector) || queryVector.length === 0) return [];
+      // A zero vector has no direction — every similarity would be 0, which
+      // ranks nothing. Treat it like an empty query.
+      if (queryVector.every((component) => component === 0)) return [];
       const topK = Math.min(
         Math.max(1, Math.floor(options?.topK ?? DEFAULT_TOP_K)),
         MAX_TOP_K,

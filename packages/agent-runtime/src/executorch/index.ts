@@ -27,7 +27,12 @@ export {
 } from './runtime';
 export type { ExecutorchConfig } from './runtime';
 
-export { createResourceFetcher, createMemoryKV, AbortDownloadError } from './resource-fetcher';
+export {
+  createResourceFetcher,
+  createMemoryKV,
+  AbortDownloadError,
+  DownloadPausedError,
+} from './resource-fetcher';
 export type {
   ResourceFetcher,
   ResourceSource,

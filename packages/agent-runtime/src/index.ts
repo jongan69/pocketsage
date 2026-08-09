@@ -32,16 +32,40 @@ export type {
 export {
   LLAMA3_2_1B_SPINQUANT,
   LLAMA3_2_3B_SPINQUANT,
+  LOCAL_AI_MODEL_DOWNLOAD_BYTES,
+  EXECUTORCH_RESOURCE_INTEGRITY,
   BUILT_IN_MODELS,
   LLMModule,
+  executorchGlobal,
+  hasExecutorchBindings,
   isExecutorchAvailable,
+  ensureExecutorchInstalled,
   initExecutorch,
+  getExecutorchResourceIntegrity,
+  expectedExecutorchResourceBytes,
+  minimumExecutorchResourceBytes,
   createResourceFetcher,
+  createMemoryKV,
+  AbortDownloadError,
+  DownloadPausedError,
 } from './executorch';
-export type { ResourceFetcher } from './executorch';
+export type {
+  ExecutorchResourceIntegrity,
+  ResourceFetcher,
+  ResourceSource,
+  ProgressCallback,
+  MemoryKVStore,
+  CreateResourceFetcherOptions,
+} from './executorch';
 
 // ── Models ────────────────────────────────────────────────────────────────────
-export { ModelManager, modelManager, getBuiltInModels, getRecommendedModel } from './models';
+export {
+  ModelManager,
+  modelManager,
+  getBuiltInModels,
+  getRecommendedModel,
+  getModelForRamBudget,
+} from './models';
 
 // ── Inference ─────────────────────────────────────────────────────────────────
 export { generateText, streamMessage, generateObject } from './inference';

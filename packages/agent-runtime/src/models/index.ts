@@ -13,13 +13,14 @@ import type { ModelDownloadState, ModelInfo, ModelTier } from '../types';
 import { BUILT_IN_MODELS } from '../executorch/model-config';
 import {
   createResourceFetcher,
+  DownloadPausedError,
   type ResourceFetcher,
 } from '../executorch/resource-fetcher';
 import { initExecutorch, isExecutorchAvailable } from '../executorch/runtime';
-import { getBuiltInModels, getRecommendedModel } from './catalog';
+import { getBuiltInModels, getModelForRamBudget, getRecommendedModel } from './catalog';
 
 export type { ModelInfo, ModelDownloadState, ModelTier };
-export { getBuiltInModels, getRecommendedModel, BUILT_IN_MODELS };
+export { getBuiltInModels, getModelForRamBudget, getRecommendedModel, BUILT_IN_MODELS };
 
 /**
  * Manages the lifecycle of the built-in on-device models.
@@ -191,6 +192,12 @@ export class ModelManager {
         this.downloadStates.set(id, { status: 'not_downloaded' });
         return;
       }
+      if (error instanceof DownloadPausedError) {
+        // Pausing is not an error either. The fetcher persisted the resume
+        // state, so a later downloadModel() of the same model resumes in place.
+        this.downloadStates.set(id, { status: 'not_downloaded' });
+        return;
+      }
       this.downloadStates.set(id, {
         status: 'error',
         message: error instanceof Error ? error.message : 'Download failed',
@@ -219,7 +226,8 @@ export class ModelManager {
   /**
    * Pause the in-flight download (if any). The pause state is persisted and a
    * later {@link downloadModel} of the same model resumes instead of
-   * restarting. The pending download promise rejects with a "paused" error.
+   * restarting. The pending {@link downloadModel} promise resolves (the model
+   * returns to `not_downloaded`; the partial data is kept for resume).
    */
   async pauseDownload(): Promise<void> {
     await this.fetcher.pauseActiveDownload();
