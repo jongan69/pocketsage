@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { ToolCall } from '@pocketsage/agent-runtime';
+import type { ToolCall, SkillToolCall } from '@pocketsage/agent-runtime';
 import { agentLoop, buildAgentContext, skillRegistry } from '@pocketsage/agent-runtime';
 import { useConversationStore } from '@/stores/conversation-store';
 import { useModelStore } from '@/stores/model-store';
@@ -11,7 +11,7 @@ import { DEFAULT_MODEL_TIER, MAX_AGENT_STEPS } from '@/lib/constants';
 type ConfirmationDecision = 'approve' | 'deny';
 
 interface PendingConfirmationGate {
-  call: ToolCall;
+  call: SkillToolCall;
   skillName: string;
   resolve: (decision: ConfirmationDecision) => void;
 }
@@ -60,7 +60,7 @@ export function useAgent() {
   }, [pendingToolConfirmation]);
 
   const requestToolConfirmation = useCallback(
-    (call: ToolCall, skillName: string): Promise<ConfirmationDecision> => {
+    (call: SkillToolCall, skillName: string): Promise<ConfirmationDecision> => {
       return new Promise((resolve) => {
         pendingConfirmRef.current = { call, skillName, resolve };
         useConversationStore.getState().requestToolConfirmation(call, skillName);
@@ -127,7 +127,7 @@ export function useAgent() {
               useConversationStore.getState().addToolCall({
                 ...call,
                 skillName: skillRegistry.findSkillForTool(call.name) ?? '',
-              });
+              } as SkillToolCall);
             },
             onComplete: (result) => {
               const current = useConversationStore.getState();
@@ -166,7 +166,7 @@ export function useAgent() {
           }
           const skillName = skillRegistry.findSkillForTool(name) ?? '';
           const decision = await requestToolConfirmation(
-            { id: uuid(), name, arguments: args ?? {}, skillName },
+            { id: uuid(), name, arguments: args ?? {}, skillName } as SkillToolCall,
             skillName,
           );
           if (decision === 'deny' || signal.aborted) {

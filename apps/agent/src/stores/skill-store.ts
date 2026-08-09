@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Skill, SkillMetadata, ToolDefinition } from '@pocketsage/agent-runtime';
+import type { Skill, SkillMetadata, SkillToolDefinition } from '@pocketsage/agent-runtime';
 import { skillRegistry } from '@pocketsage/agent-runtime';
 import { readJson, writeJson } from '@/lib/persistence';
 import { STORAGE_KEYS, SKILL_NAMES } from '@/lib/constants';
@@ -25,7 +25,7 @@ export interface SkillState {
 
   // Derived
   getEnabledSkillsMetadata: () => SkillMetadata[];
-  getEnabledTools: () => ToolDefinition[];
+  getEnabledTools: () => SkillToolDefinition[];
 }
 
 // ── Bundled skills ──────────────────────────────────────────────────────────────

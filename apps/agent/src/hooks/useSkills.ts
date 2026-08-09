@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { SkillMetadata, ToolDefinition } from '@pocketsage/agent-runtime';
+import type { SkillMetadata, SkillToolDefinition } from '@pocketsage/agent-runtime';
 import { useSkillStore } from '@/stores/skill-store';
 import type { ToolPermission } from '@/stores/skill-store';
 
@@ -31,7 +31,7 @@ export function useSkills() {
     [],
   );
   const getEnabledTools = useCallback(
-    (): ToolDefinition[] => useSkillStore.getState().getEnabledTools(),
+    (): SkillToolDefinition[] => useSkillStore.getState().getEnabledTools(),
     [],
   );
 
