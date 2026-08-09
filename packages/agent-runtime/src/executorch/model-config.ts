@@ -1,3 +1,13 @@
+/**
+ * Model configuration for the built-in Llama 3.2 ExecuTorch models.
+ *
+ * Models are published by Software Mansion under
+ * `software-mansion/react-native-executorch-llama-3.2` (release v0.8.0) and
+ * are downloaded from HuggingFace. Every resource is pinned by size and
+ * SHA-256 in {@link EXECUTORCH_RESOURCE_INTEGRITY}; the resource fetcher
+ * refuses to load anything not in the trusted manifest.
+ */
+
 import type { ModelInfo } from '../types';
 
 // ── Model Sources ──────────────────────────────────────────────────────────────
@@ -7,6 +17,7 @@ const BASE_URL =
 
 // ── Model Config Objects ───────────────────────────────────────────────────────
 
+/** Named sources for Llama 3.2 1B SpinQuant (the `fast` tier model). */
 export const LLAMA3_2_1B_SPINQUANT = {
   modelName: 'llama-3.2-1b-spinquant',
   modelSource: `${BASE_URL}/llama-3.2-1B/spinquant/llama3_2_spinquant.pte`,
@@ -14,6 +25,7 @@ export const LLAMA3_2_1B_SPINQUANT = {
   tokenizerConfigSource: `${BASE_URL}/tokenizer_config.json`,
 } as const;
 
+/** Named sources for Llama 3.2 3B SpinQuant (the `balanced` tier model). */
 export const LLAMA3_2_3B_SPINQUANT = {
   modelName: 'llama-3.2-3b-spinquant',
   modelSource: `${BASE_URL}/llama-3.2-3B/spinquant/llama3_2_3B_spinquant.pte`,
@@ -23,13 +35,27 @@ export const LLAMA3_2_3B_SPINQUANT = {
 
 // ── Integrity Hashes ──────────────────────────────────────────────────────────
 
+/** Expected download size in bytes for each model tier. */
 export const LOCAL_AI_MODEL_DOWNLOAD_BYTES = {
   fast: 1_135_951_488,
   balanced: 2_553_367_552,
 } as const;
 
+/**
+ * One entry of the trusted release manifest: the exact byte size and SHA-256
+ * hash of a model resource.
+ */
+export type ExecutorchResourceIntegrity = {
+  bytes: number;
+  sha256: string;
+};
+
+/**
+ * The trusted release manifest: canonical resource URL → integrity info.
+ * Every model resource must be listed here to be downloaded or loaded.
+ */
 export const EXECUTORCH_RESOURCE_INTEGRITY: Readonly<
-  Record<string, { bytes: number; sha256: string }>
+  Record<string, ExecutorchResourceIntegrity>
 > = {
   [`${BASE_URL}/llama-3.2-1B/spinquant/llama3_2_spinquant.pte`]: {
     bytes: LOCAL_AI_MODEL_DOWNLOAD_BYTES.fast,
@@ -51,6 +77,7 @@ export const EXECUTORCH_RESOURCE_INTEGRITY: Readonly<
 
 // ── Built-in Model Catalog ────────────────────────────────────────────────────
 
+/** The built-in models shipped with the library. */
 export const BUILT_IN_MODELS: ModelInfo[] = [
   {
     id: 'llama-3.2-1b-spinquant',
@@ -86,13 +113,24 @@ export const BUILT_IN_MODELS: ModelInfo[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Look up the trusted integrity info for a resource source URL.
+ * Query fragments and search params are stripped before lookup.
+ *
+ * @returns The `{ bytes, sha256 }` manifest entry, or `null` if the source is
+ *   not in the trusted release manifest.
+ */
 export function getExecutorchResourceIntegrity(
   source: string,
-): { bytes: number; sha256: string } | null {
+): ExecutorchResourceIntegrity | null {
   const canonical = source.split(/[?#]/, 1)[0];
   return EXECUTORCH_RESOURCE_INTEGRITY[canonical] ?? null;
 }
 
+/**
+ * Expected download size in bytes for a resource source, used for disk-space
+ * checks. Falls back to heuristics for unknown-but-plausible sources.
+ */
 export function expectedExecutorchResourceBytes(source: string): number {
   const integrity = getExecutorchResourceIntegrity(source);
   if (integrity) return integrity.bytes;
@@ -107,6 +145,11 @@ export function expectedExecutorchResourceBytes(source: string): number {
   return 64 * 1024 * 1024;
 }
 
+/**
+ * Minimum size (bytes) a resource file must have to be treated as a plausible
+ * complete download. Used by `hasResource` and the download completeness check
+ * to avoid re-hashing truncated files.
+ */
 export function minimumExecutorchResourceBytes(source: string): number {
   const integrity = getExecutorchResourceIntegrity(source);
   if (integrity) return integrity.bytes;

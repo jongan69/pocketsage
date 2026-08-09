@@ -34,6 +34,12 @@ interface ConversationState {
   isStreaming: boolean;
   streamingText: string;
   pendingToolConfirmation: PendingToolConfirmation | null;
+  /**
+   * The user's decision for the most recent confirmation. `null` means the
+   * pending state was cleared without an explicit decision (the UI treated
+   * the dismissal as approval).
+   */
+  lastConfirmationDecision: 'approve' | 'deny' | null;
 
   // Actions
   initialize: () => Promise<void>;
@@ -43,10 +49,12 @@ interface ConversationState {
   addUserMessage: (content: string) => void;
   addAssistantMessage: (content: string) => void;
   appendStreamingToken: (token: string) => void;
+  setStreamingText: (content: string) => void;
   finalizeStreaming: (content: string) => void;
   addToolCall: (call: ToolCall) => void;
   addToolResult: (result: ToolResult) => void;
   requestToolConfirmation: (call: ToolCall, skillName: string) => void;
+  resolveToolConfirmation: (decision: 'approve' | 'deny') => void;
   clearToolConfirmation: () => void;
   startStreaming: () => void;
   stopStreaming: () => void;
@@ -142,6 +150,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
   isStreaming: false,
   streamingText: '',
   pendingToolConfirmation: null,
+  lastConfirmationDecision: null,
 
   initialize: async () => {
     try {
@@ -238,6 +247,10 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     set((s) => ({ streamingText: s.streamingText + token }));
   },
 
+  setStreamingText: (content) => {
+    set({ streamingText: content });
+  },
+
   finalizeStreaming: (content) => {
     const active = get().activeConversation();
     if (!active) {
@@ -282,11 +295,15 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
   },
 
   requestToolConfirmation: (call, skillName) => {
-    set({ pendingToolConfirmation: { call, skillName } });
+    set({ pendingToolConfirmation: { call, skillName }, lastConfirmationDecision: null });
+  },
+
+  resolveToolConfirmation: (decision) => {
+    set({ pendingToolConfirmation: null, lastConfirmationDecision: decision });
   },
 
   clearToolConfirmation: () => {
-    set({ pendingToolConfirmation: null });
+    set({ pendingToolConfirmation: null, lastConfirmationDecision: null });
   },
 
   startStreaming: () => {

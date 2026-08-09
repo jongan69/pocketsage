@@ -1,3 +1,13 @@
+/**
+ * @pocketsage/agent-runtime — On-device AI agent runtime for Expo/React Native.
+ *
+ * Pure TypeScript, zero React dependencies. Provides:
+ * - ExecuTorch bridge, model management, and on-device inference
+ * - RAG pipeline (chunking, embedding, vector store, memory manager)
+ * - Skill system (SKILL.md parsing, skill registry, tool execution)
+ * - Agent loop (multi-step tool-calling orchestration)
+ */
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type {
   Message,
@@ -16,6 +26,8 @@ export type {
   SkillMetadata,
   AgentContext,
   AgentResult,
+  ResourceFetcherAdapter,
+  ExecutorchConfig,
 } from './types';
 
 // ── ExecuTorch ────────────────────────────────────────────────────────────────
@@ -28,7 +40,7 @@ export {
   initExecutorch,
   createResourceFetcher,
 } from './executorch';
-export type { ExecutorchConfig, ResourceFetcher } from './executorch';
+export type { ResourceFetcher } from './executorch';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 export { ModelManager, modelManager, getBuiltInModels, getRecommendedModel } from './models';
@@ -39,13 +51,29 @@ export type { GenerateOptions, StreamOptions } from './inference';
 
 // ── RAG ───────────────────────────────────────────────────────────────────────
 export { chunkText, embed, createVectorStore, VectorStore, MemoryManager } from './rag';
+export type {
+  VectorEntry,
+  SearchResult,
+  VectorStoreInterface,
+  MemoryFileSystem,
+} from './rag';
 
 // ── Skills ────────────────────────────────────────────────────────────────────
 export { SkillRegistry, skillRegistry } from './skills';
-export { parseSkillMd } from './skills/loader';
-export type { Skill, SkillTool, SkillToolDefinition, ToolCallRequest, ToolCallResult } from './skills/types';
+export { parseSkillMd, loadSkillFromDirectory, loadSkillsFromDirectory } from './skills/loader';
+export type { SkillLoaderOptions, ParsedSkillMd } from './skills/loader';
+export type {
+  Skill,
+  SkillMetadata,
+  Tool,
+  ToolDefinition,
+  ToolParameter,
+  ToolCall,
+  ToolResult,
+} from './skills/types';
 
 // ── Agent ─────────────────────────────────────────────────────────────────────
-export { agentLoop } from './agent';
+export { agentLoop, executeToolCalls } from './agent';
+export type { AgentCallbacks, AgentToolCall, AgentToolResult } from './agent';
 export { buildAgentContext } from './agent/context';
 export type { BuildContextOptions } from './agent/context';

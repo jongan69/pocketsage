@@ -1,7 +1,30 @@
+/**
+ * Model catalog helpers: built-in model listing and RAM-aware recommendation.
+ */
+
 import type { ModelInfo } from '../types';
 import { BUILT_IN_MODELS } from '../executorch/model-config';
 
 export { BUILT_IN_MODELS };
+
+/** Default RAM assumption (4 GiB) when device memory cannot be measured. */
+const DEFAULT_DEVICE_RAM_BYTES = 4 * 1024 * 1024 * 1024;
+
+/**
+ * Estimate the device's physical RAM in bytes.
+ *
+ * Uses `navigator.deviceMemory` (GiB, available in Chromium-based engines) on
+ * web and in environments that expose it; falls back to 4 GiB elsewhere
+ * (Hermes on React Native does not expose a memory-size API).
+ */
+export function estimateDeviceRamBytes(): number {
+  const nav = (globalThis as { navigator?: { deviceMemory?: number } }).navigator;
+  const gib = nav?.deviceMemory;
+  if (typeof gib === 'number' && Number.isFinite(gib) && gib > 0) {
+    return gib * 1024 ** 3;
+  }
+  return DEFAULT_DEVICE_RAM_BYTES;
+}
 
 /** Returns all built-in model definitions. */
 export function getBuiltInModels(): ModelInfo[] {
@@ -9,31 +32,21 @@ export function getBuiltInModels(): ModelInfo[] {
 }
 
 /**
- * Returns the largest model the device is likely to run,
- * or the fast model as a safe default.
- *
- * Uses a simple heuristic: if the device reports sufficient
- * memory (or if we can't determine RAM), recommend the 1B model.
- * The 3B model requires ~5GB free RAM.
+ * Returns the best model for this device: the largest built-in model whose
+ * `minRamBytes` fits within the estimated device RAM. Returns `null` when no
+ * built-in model fits (the device is below the minimum supported RAM).
  */
 export function getRecommendedModel(): ModelInfo | null {
-  if (BUILT_IN_MODELS.length === 0) return null;
-  // Default to the fast (1B) model — safe on all supported devices.
-  const fast = BUILT_IN_MODELS.find((m) => m.tier === 'fast');
-  return fast ?? BUILT_IN_MODELS[0];
+  return getModelForRamBudget(estimateDeviceRamBytes());
 }
 
 /**
- * Returns the best model that fits within the given RAM budget (in bytes).
- * If none fit, returns the smallest model.
+ * Returns the largest model that fits within the given RAM budget (bytes),
+ * or `null` if none of the built-in models fit.
  */
 export function getModelForRamBudget(ramBudgetBytes: number): ModelInfo | null {
   if (BUILT_IN_MODELS.length === 0) return null;
   const fitting = BUILT_IN_MODELS.filter((m) => m.minRamBytes <= ramBudgetBytes);
-  if (fitting.length > 0) {
-    // Return the largest fitting model
-    return fitting.reduce((a, b) => (a.minRamBytes > b.minRamBytes ? a : b));
-  }
-  // Return the smallest model as fallback
-  return BUILT_IN_MODELS.reduce((a, b) => (a.minRamBytes < b.minRamBytes ? a : b));
+  if (fitting.length === 0) return null;
+  return fitting.reduce((a, b) => (a.minRamBytes > b.minRamBytes ? a : b));
 }

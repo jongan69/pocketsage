@@ -1,125 +1,138 @@
 import { create } from 'zustand';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import {
   createVectorStore,
   MemoryManager,
   type SearchResult,
 } from '@pocketsage/agent-runtime';
+import type { VectorStore } from '@pocketsage/agent-runtime';
 
-export type MemoryStore = ReturnType<typeof createMemoryStore>;
+const memoryDir = Paths.document;
+const vectorStoreFile = new File(memoryDir, 'vector-store.json');
+const globalMemoryFile = new File(memoryDir, 'GLOBAL.md');
 
-const DOC_DIR = FileSystem.documentDirectory ?? '';
-const VECTOR_STORE_PATH = `${DOC_DIR}vector-store.json`;
-const GLOBAL_MEMORY_PATH = `${DOC_DIR}GLOBAL.md`;
+/** A fresh in-memory store used as the backing store for the MemoryManager. */
+const createStore = (): VectorStore => createVectorStore();
+
+interface MemoryState {
+  manager: MemoryManager | null;
+  isLoaded: boolean;
+  persistentFacts: string[];
+
+  // Actions
+  initialize: () => Promise<void>;
+  indexExchange: (userMessage: string, assistantResponse: string) => Promise<void>;
+  search: (query: string, topK?: number) => Promise<SearchResult[]>;
+  remember: (fact: string) => Promise<void>;
+  clearAll: () => Promise<void>;
+  exportMemories: () => Promise<string>;
+}
+
+// ── File I/O for the MemoryManager ─────────────────────────────────────────────
 
 async function readFile(path: string): Promise<string> {
-  return FileSystem.readAsStringAsync(path, { encoding: FileSystem.EncodingType.UTF8 });
+  const file = new File(path);
+  if (!file.exists) return '';
+  return file.text();
 }
 
 async function writeFile(path: string, content: string): Promise<void> {
-  await FileSystem.writeAsStringAsync(path, content, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
+  const file = new File(path);
+  await file.write(content);
 }
 
 async function fileExists(path: string): Promise<boolean> {
-  try {
-    const info = await FileSystem.getInfoAsync(path);
-    return info.exists;
-  } catch {
-    return false;
-  }
+  return new File(path).exists;
 }
 
-function createMemoryStore() {
-  return create<{
-    manager: MemoryManager | null;
-    isLoaded: boolean;
-    persistentFacts: string[];
+// ── Store ──────────────────────────────────────────────────────────────────────
 
-    initialize: () => Promise<void>;
-    indexExchange: (userMessage: string, assistantResponse: string) => Promise<void>;
-    search: (query: string, topK?: number) => Promise<SearchResult[]>;
-    remember: (fact: string) => Promise<void>;
-    clearAll: () => Promise<void>;
-    exportMemories: () => Promise<string>;
-  }>((set, get) => ({
-    manager: null,
-    isLoaded: false,
-    persistentFacts: [],
+export const useMemoryStore = create<MemoryState>((set, get) => ({
+  manager: null,
+  isLoaded: false,
+  persistentFacts: [],
 
-    initialize: async () => {
-      const store = createVectorStore();
-      const manager = new MemoryManager(store, GLOBAL_MEMORY_PATH, {
-        readFile,
-        writeFile,
-        fileExists,
-      });
+  initialize: async () => {
+    const store = createStore();
+    const manager = new MemoryManager(store, globalMemoryFile.uri, {
+      readFile,
+      writeFile,
+      fileExists,
+    });
 
-      // Load existing data
-      try {
-        await manager.load(VECTOR_STORE_PATH);
-      } catch {
-        // Start fresh
-      }
+    // Load persisted memories (vector store + GLOBAL.md). A missing file is a
+    // fresh start — not an error.
+    try {
+      await manager.load(vectorStoreFile.uri);
+    } catch (error) {
+      console.warn('[memory] No persisted memories yet', error);
+    }
 
-      try {
-        const facts = await manager.recall();
-        set({ manager, isLoaded: true, persistentFacts: facts });
-      } catch {
-        set({ manager, isLoaded: true });
-      }
-    },
-
-    indexExchange: async (userMessage, assistantResponse) => {
-      const { manager } = get();
-      if (!manager) return;
-      await manager.index(userMessage, assistantResponse);
-      await manager.save(VECTOR_STORE_PATH);
-    },
-
-    search: async (query, topK = 3) => {
-      const { manager } = get();
-      if (!manager) return [];
-      return manager.search(query, topK);
-    },
-
-    remember: async (fact) => {
-      const { manager } = get();
-      if (!manager) return;
-      await manager.remember(fact);
-      try {
-        const facts = await manager.recall();
-        set({ persistentFacts: facts });
-      } catch {
-        // Best effort
-      }
-    },
-
-    clearAll: async () => {
-      const { manager } = get();
-      if (!manager) return;
-      const store = createVectorStore();
-      await store.clear();
-      try {
-        await writeFile(GLOBAL_MEMORY_PATH, '');
-        await writeFile(VECTOR_STORE_PATH, '');
-      } catch {
-        // Best effort
-      }
-      set({ persistentFacts: [] });
-      // Re-initialize with empty store
-      await get().initialize();
-    },
-
-    exportMemories: async () => {
-      const { manager } = get();
-      if (!manager) return '{}';
+    try {
       const facts = await manager.recall();
-      const store = manager['store'] as ReturnType<typeof createVectorStore>;
-      return JSON.stringify({ facts, store: store?.toJSON?.() ?? '' }, null, 2);
-    },
-  }));
-}
+      set({ manager, isLoaded: true, persistentFacts: facts });
+    } catch {
+      set({ manager, isLoaded: true });
+    }
+  },
 
-export const useMemoryStore = createMemoryStore();
+  indexExchange: async (userMessage, assistantResponse) => {
+    const { manager } = get();
+    if (!manager) return;
+    await manager.index(userMessage, assistantResponse);
+    await manager.save(vectorStoreFile.uri);
+  },
+
+  search: async (query, topK = 3) => {
+    const { manager } = get();
+    if (!manager) return [];
+    return manager.search(query, topK);
+  },
+
+  remember: async (fact) => {
+    const { manager } = get();
+    if (!manager) return;
+    await manager.remember(fact);
+    await manager.save(vectorStoreFile.uri);
+    try {
+      const facts = await manager.recall();
+      set({ persistentFacts: facts });
+    } catch {
+      // Best effort
+    }
+  },
+
+  clearAll: async () => {
+    const { manager } = get();
+    if (!manager) return;
+    const store = manager['store'] as VectorStore | undefined;
+    await store?.clear();
+    try {
+      if (globalMemoryFile.exists) await globalMemoryFile.write('');
+      if (vectorStoreFile.exists) vectorStoreFile.delete();
+    } catch {
+      // Best effort
+    }
+    set({ persistentFacts: [] });
+    // Re-initialize with an empty backing store.
+    await get().initialize();
+  },
+
+  exportMemories: async () => {
+    const { manager } = get();
+    if (!manager) return '{}';
+    const facts = await manager.recall();
+    const store = manager['store'] as VectorStore | undefined;
+    return JSON.stringify(
+      {
+        exportedAt: new Date().toISOString(),
+        facts,
+        vectorStore: store?.toJSON?.() ?? '',
+      },
+      null,
+      2,
+    );
+  },
+}));
+
+export type MemoryStore = typeof useMemoryStore;
