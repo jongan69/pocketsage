@@ -37,6 +37,11 @@ export type { ExecutorchConfig };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const LLMModule: any = null;
 
+/** `globalThis` typed as the ExecuTorch global scope. On web it has no bindings. */
+export function executorchGlobal(): Record<string, unknown> {
+  return globalThis as Record<string, unknown>;
+}
+
 /** Whether the native ExecuTorch JSI bindings are present. Always `false` on web. */
 export function hasExecutorchBindings(): boolean {
   return false;

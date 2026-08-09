@@ -1,64 +1,62 @@
-import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { ConversationStoreProvider } from '@/stores/conversation-store-provider';
-import { ModelStoreProvider } from '@/stores/model-store-provider';
-import { SkillStoreProvider } from '@/stores/skill-store-provider';
-import { MemoryStoreProvider } from '@/stores/memory-store-provider';
-import { useModelStore } from '@/stores/model-store';
-import { useMemoryStore } from '@/stores/memory-store';
-import {
-  calendarSkill,
-} from '@/skills/calendar/skill';
-import {
-  remindersSkill,
-} from '@/skills/reminders/skill';
-import {
-  healthSkill,
-} from '@/skills/health/skill';
-import {
-  filesSkill,
-} from '@/skills/files/skill';
-import {
-  contactsSkill,
-} from '@/skills/contacts/skill';
-import { useSkillStore } from '@/stores/skill-store';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import '../../global.css';
+import { initializeStores, StoreProviders } from '@/stores/providers';
+import { loadAppFonts } from '@/lib/fonts';
+import { readJson } from '@/lib/persistence';
+import { STORAGE_KEYS } from '@/lib/constants';
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function Initializer({ children }: { children: React.ReactNode }) {
+/**
+ * Boot sequence: load fonts (with system fallback) and initialize every
+ * store (SQLite conversations, model manager, skills, memory). Keeps the
+ * native splash screen visible until the app is usable.
+ */
+function Initializer({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const modelStore = useModelStore();
-  const memoryStore = useMemoryStore();
-  const skillStore = useSkillStore();
 
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
       try {
-        // Load bundled skills
-        skillStore.loadBundledSkill(calendarSkill);
-        skillStore.loadBundledSkill(remindersSkill);
-        skillStore.loadBundledSkill(healthSkill);
-        skillStore.loadBundledSkill(filesSkill);
-        skillStore.loadBundledSkill(contactsSkill);
-
-        // Initialize model runtime
-        await modelStore.initialize();
-
-        // Initialize memory
-        await memoryStore.initialize();
+        await loadAppFonts();
+        await initializeStores();
+        if (!cancelled) setReady(true);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Initialization failed');
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Initialization failed');
+        }
       } finally {
-        setReady(true);
-        await SplashScreen.hideAsync();
+        await SplashScreen.hideAsync().catch(() => {});
       }
     }
+
     init();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // First-launch redirect — runs after the navigator has mounted.
+  useEffect(() => {
+    if (!ready || error) return;
+    readJson<boolean>(STORAGE_KEYS.ONBOARDING_COMPLETE, false)
+      .then((onboardingComplete) => {
+        if (!onboardingComplete) {
+          router.replace('/onboarding');
+        }
+      })
+      .catch(() => {
+        // Default to the tabs; onboarding stays reachable from settings.
+      });
+  }, [ready, error]);
 
   if (!ready) {
     return (
@@ -74,9 +72,7 @@ function Initializer({ children }: { children: React.ReactNode }) {
   if (error) {
     return (
       <View className="flex-1 bg-surface items-center justify-center px-8">
-        <Text className="text-danger text-lg font-semibold mb-2">
-          Initialization Error
-        </Text>
+        <Text className="text-danger text-lg font-semibold mb-2">Initialization Error</Text>
         <Text className="text-text-secondary text-center">{error}</Text>
       </View>
     );
@@ -87,37 +83,33 @@ function Initializer({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <ModelStoreProvider>
-      <SkillStoreProvider>
-        <ConversationStoreProvider>
-          <MemoryStoreProvider>
-            <Initializer>
-              <StatusBar style="light" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: '#0a0a0a' },
-                  animation: 'slide_from_right',
-                }}
-              >
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen
-                  name="onboarding"
-                  options={{ presentation: 'fullScreenModal', headerShown: false }}
-                />
-                <Stack.Screen
-                  name="skill/[name]"
-                  options={{ presentation: 'modal', headerShown: false }}
-                />
-                <Stack.Screen
-                  name="conversation/[id]"
-                  options={{ animation: 'slide_from_right', headerShown: false }}
-                />
-              </Stack>
-            </Initializer>
-          </MemoryStoreProvider>
-        </ConversationStoreProvider>
-      </SkillStoreProvider>
-    </ModelStoreProvider>
+    <SafeAreaProvider>
+      <StoreProviders>
+        <Initializer>
+          <StatusBar style="light" backgroundColor="#0a0a0a" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#0a0a0a' },
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="onboarding"
+              options={{ presentation: 'fullScreenModal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="skill/[name]"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="conversation/[id]"
+              options={{ animation: 'slide_from_right', headerShown: false }}
+            />
+          </Stack>
+        </Initializer>
+      </StoreProviders>
+    </SafeAreaProvider>
   );
 }

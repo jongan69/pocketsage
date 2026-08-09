@@ -77,7 +77,7 @@ export function parseSkillMd(content: string, filePath: string): ParsedSkillMd {
     // Everything after `## Instructions` (raw, trimmed).
     const instructions = sections.get('instructions')?.trim() ?? '';
 
-    const keywords = extractKeywords(name, description, triggers, toolNames);
+    const keywords = extractKeywords(name, description, ...triggers, ...toolNames);
 
     return {
       metadata: {

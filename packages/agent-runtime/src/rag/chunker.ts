@@ -74,7 +74,13 @@ export function chunkText(text: string, options?: Partial<ChunkOptions>): string
     if (overlap > 0) {
       const tail = current.slice(-overlap);
       const boundary = lastSentenceBoundaryIndex(tail);
-      current = boundary >= 0 ? tail.slice(boundary + 1) : tail;
+      let nextStart = boundary >= 0 ? tail.slice(boundary + 1) : tail;
+      // Clamp the overlap so it never pushes a chunk over maxChunkSize
+      // (e.g. when the next piece is a hard-broken word fragment).
+      if (nextStart.length + piece.length > maxChunkSize) {
+        nextStart = nextStart.slice(0, Math.max(0, maxChunkSize - piece.length));
+      }
+      current = nextStart;
     } else {
       current = '';
     }

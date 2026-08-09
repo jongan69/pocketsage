@@ -107,8 +107,10 @@ export async function buildAgentContext(
 
   const systemPrompt = buildAgentSystemPrompt(activeSkills, memories);
 
-  // 3. Resolve tools from enabled skills.
-  const tools = skillRegistry.getToolsForSkills(enabledSkills ?? new Set());
+  // 3. Resolve tools from enabled skills, converted to the model-facing shape.
+  const tools = toModelToolDefinitions(
+    skillRegistry.getToolsForSkills(enabledSkills ?? new Set()),
+  );
 
   // 4. Tool executor routing through the skill registry.
   const toolExecutor = async (
@@ -143,6 +145,37 @@ export async function buildAgentContext(
     callbacks,
     signal,
   };
+}
+
+/**
+ * Convert skill tool definitions (which may carry `requiresConfirmation` and
+ * optional parameter descriptions) into the model-facing `ToolDefinition`
+ * shape declared in `types.ts`.
+ */
+function toModelToolDefinitions(
+  definitions: import('../skills/types').ToolDefinition[],
+): AgentContext['tools'] {
+  return definitions.map((definition) => {
+    const properties: AgentContext['tools'][number]['parameters']['properties'] = {};
+    for (const [key, parameter] of Object.entries(
+      definition.parameters?.properties ?? {},
+    )) {
+      properties[key] = {
+        type: parameter.type ?? 'string',
+        description: parameter.description ?? '',
+        ...(parameter.enum ? { enum: parameter.enum } : {}),
+      };
+    }
+    return {
+      name: definition.name,
+      description: definition.description,
+      parameters: {
+        type: 'object',
+        properties,
+        required: definition.parameters?.required ?? [],
+      },
+    };
+  });
 }
 
 /**

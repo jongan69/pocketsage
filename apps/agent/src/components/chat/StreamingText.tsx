@@ -1,16 +1,46 @@
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Text, View, Animated, Easing } from 'react-native';
 
 interface StreamingTextProps {
   text: string;
   isStreaming: boolean;
 }
 
+/** Streaming assistant text with **bold**, `code`, and a blinking cursor. */
 export const StreamingText = React.memo(function StreamingText({
   text,
   isStreaming,
 }: StreamingTextProps) {
-  // Simple parsing for bold and code
+  const cursorOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!isStreaming) {
+      cursorOpacity.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(cursorOpacity, {
+          toValue: 0,
+          duration: 450,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cursorOpacity, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+      cursorOpacity.setValue(1);
+    };
+  }, [isStreaming, cursorOpacity]);
+
   const segments = parseMarkdownInline(text);
 
   return (
@@ -27,7 +57,10 @@ export const StreamingText = React.memo(function StreamingText({
         );
       })}
       {isStreaming && (
-        <Text className="text-accent font-bold ml-0.5">|</Text>
+        <Animated.View
+          style={{ opacity: cursorOpacity }}
+          className="w-0.5 h-4 bg-accent ml-0.5"
+        />
       )}
     </View>
   );

@@ -1,31 +1,50 @@
-import { View, Text, FlatList, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useMemo } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
-import { useConversationStore } from '@/stores/conversation-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft, MessageSquareOff } from 'lucide-react-native';
+import type { Message } from '@pocketsage/agent-runtime';
 import { MessageBubble } from '@/components/chat/MessageBubble';
+import { useConversationStore } from '@/stores/conversation-store';
 
+/**
+ * Read-only view of a past conversation. Selecting a conversation here also
+ * marks it active, so the Chat tab can continue it.
+ */
 export default function ConversationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { conversations } = useConversationStore();
-  const conversation = conversations.find((c) => c.id === id);
+  const insets = useSafeAreaInsets();
 
-  if (!conversation) {
+  const conversation = useConversationStore((s) =>
+    s.conversations.find((c) => c.id === id),
+  );
+  const setActiveConversation = useConversationStore((s) => s.setActiveConversation);
+
+  useEffect(() => {
+    if (id) setActiveConversation(id);
+  }, [id, setActiveConversation]);
+
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  }, []);
+
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => <MessageBubble role={item.role} content={item.content} />,
+    [],
+  );
+
+  const header = useMemo(() => {
+    if (!conversation) return null;
     return (
-      <SafeAreaView className="flex-1 bg-surface items-center justify-center px-8">
-        <Text className="text-text-secondary text-lg text-center">Conversation not found</Text>
-        <Pressable onPress={() => router.back()} className="mt-4">
-          <Text className="text-accent font-semibold">Go back</Text>
-        </Pressable>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView className="flex-1 bg-surface">
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-surface-tertiary">
-        <Pressable onPress={() => router.back()} className="p-2 -ml-2 mr-2">
+      <View
+        className="flex-row items-center px-4 py-3 border-b border-surface-tertiary bg-surface"
+        style={{ paddingTop: insets.top + 12 }}
+      >
+        <Pressable onPress={goBack} className="p-2 -ml-2 mr-2">
           <ArrowLeft size={22} color="#a3a3a3" />
         </Pressable>
         <View className="flex-1">
@@ -33,26 +52,46 @@ export default function ConversationDetailScreen() {
             {conversation.title}
           </Text>
           <Text className="text-text-muted text-xs">
-            {new Date(conversation.createdAt).toLocaleDateString()} · {conversation.messages.length} messages
+            {new Date(conversation.createdAt).toLocaleDateString()} ·{' '}
+            {conversation.messages.length} messages
           </Text>
         </View>
       </View>
+    );
+  }, [conversation, goBack, insets.top]);
 
-      {/* Messages */}
+  if (!conversation) {
+    return (
+      <View
+        className="flex-1 bg-surface items-center justify-center px-8"
+        style={{ paddingTop: insets.top }}
+      >
+        <MessageSquareOff size={40} color="#525252" />
+        <Text className="text-text-secondary text-lg text-center mt-4">
+          Conversation not found
+        </Text>
+        <Pressable onPress={goBack} className="mt-6 bg-accent rounded-full px-6 py-3">
+          <Text className="text-white font-semibold">Go back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+      {header}
       <FlatList
         data={conversation.messages}
-        keyExtractor={(_, i) => `msg_${i}`}
+        keyExtractor={(item, index) => `${item.role}-${index}`}
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingVertical: 16 }}
-        renderItem={({ item }) => (
-          <MessageBubble role={item.role} content={item.content} />
-        )}
+        contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
+        renderItem={renderMessage}
         ListEmptyComponent={
-          <View className="items-center py-20">
+          <View className="flex-1 items-center justify-center">
             <Text className="text-text-muted">No messages</Text>
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }

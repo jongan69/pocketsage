@@ -48,7 +48,7 @@ export const useSkillStore = create<SkillState>((set, get) => ({
 
   initialize: async () => {
     // Load persisted state first so user preferences survive restarts.
-    const enabled = await readJson<string[]>(STORAGE_KEYS.ENABLED_SKILLS, SKILL_NAMES);
+    const enabled = await readJson<string[]>(STORAGE_KEYS.ENABLED_SKILLS, [...SKILL_NAMES]);
     const permissions = await readJson<Record<string, ToolPermission>>(
       STORAGE_KEYS.TOOL_PERMISSIONS,
       {},

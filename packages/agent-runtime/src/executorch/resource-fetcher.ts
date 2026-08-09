@@ -163,8 +163,12 @@ function filenameForRemoteSource(dirUri: string, source: string): string {
   return `${dirUri}${hashSource(source)}-${safe}`;
 }
 
-/** Readable description of a network connection type. */
-function isMeteredNetworkType(type: Network.NetworkStateType): boolean {
+/**
+ * Whether a network connection type is metered. An unknown/undefined type is
+ * treated as unmetered so downloads are not blocked on ambiguous state.
+ */
+function isMeteredNetworkType(type: Network.NetworkStateType | undefined): boolean {
+  if (type === undefined) return false;
   return (
     type === Network.NetworkStateType.CELLULAR ||
     type === Network.NetworkStateType.BLUETOOTH ||
@@ -327,27 +331,28 @@ export function createResourceFetcher(
       );
     }
 
-    // Network checks (best-effort — expo-network may be unavailable).
-    if (wifiOnly || REMOTE_URL_PATTERN.test(source)) {
-      try {
-        const state = await Network.getNetworkStateAsync();
-        if (!state.isConnected) {
-          throw new Error(
-            'An internet connection is required to download the on-device model.',
-          );
-        }
-        if (wifiOnly && isMeteredNetworkType(state.type)) {
-          throw new Error(
-            'The on-device model download requires a Wi-Fi connection. ' +
-              'Connect to Wi-Fi or disable the wifi-only setting.',
-          );
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Wi-Fi')) throw error;
-        if (error instanceof Error && error.message.includes('internet')) throw error;
-        // Unknown network state (e.g. web) — proceed; the download will fail
-        // naturally if there is no connectivity.
-      }
+    // Network checks apply to remote downloads only (best-effort —
+    // expo-network may be unavailable; the download then fails naturally).
+    if (!REMOTE_URL_PATTERN.test(source)) return;
+
+    let state: Network.NetworkState | null = null;
+    try {
+      state = await Network.getNetworkStateAsync();
+    } catch {
+      // expo-network unavailable — skip connectivity checks.
+    }
+    if (state === null) return;
+
+    if (!state.isConnected) {
+      throw new Error(
+        'An internet connection is required to download the on-device model.',
+      );
+    }
+    if (wifiOnly && isMeteredNetworkType(state.type)) {
+      throw new Error(
+        'The on-device model download requires a Wi-Fi connection. ' +
+          'Connect to Wi-Fi or disable the wifi-only setting.',
+      );
     }
   }
 

@@ -9,21 +9,19 @@
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+// Shared base types. The tool/skill/vector types below (ToolDefinition,
+// ToolCall, ToolResult, SkillMetadata, VectorEntry, SearchResult) are re-exported
+// from their owning modules further down — the skill variants are structural
+// supersets of the `types.ts` ones (skillName, durationMs, requiresConfirmation).
 export type {
   Message,
   ModelTier,
   ModelInfo,
   ModelDownloadState,
-  ToolDefinition,
-  ToolCall,
-  ToolResult,
   FinishReason,
   GenerationResult,
   StreamCallbacks,
   ChunkOptions,
-  VectorEntry,
-  SearchResult,
-  SkillMetadata,
   AgentContext,
   AgentResult,
   ResourceFetcherAdapter,
