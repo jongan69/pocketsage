@@ -104,7 +104,7 @@ function persistConversations(conversations: Conversation[]): void {
       );
       try {
         for (const c of conversations) {
-          statement.runSync(
+          statement.executeSync(
             c.id,
             c.title,
             JSON.stringify(c.messages),

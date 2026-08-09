@@ -121,8 +121,13 @@ export function useAgent() {
                 current.setStreamingText(accumulated);
               }
             },
-            onToolCall: (call: ToolCall) => {
-              useConversationStore.getState().addToolCall(call);
+            onToolCall: (call) => {
+              // The stream callback's call lacks a skill attribution; resolve
+              // it from the registry (the store's ToolCall requires it).
+              useConversationStore.getState().addToolCall({
+                ...call,
+                skillName: skillRegistry.findSkillForTool(call.name) ?? '',
+              });
             },
             onComplete: (result) => {
               const current = useConversationStore.getState();
@@ -161,7 +166,7 @@ export function useAgent() {
           }
           const skillName = skillRegistry.findSkillForTool(name) ?? '';
           const decision = await requestToolConfirmation(
-            { id: uuid(), name, arguments: args ?? {} },
+            { id: uuid(), name, arguments: args ?? {}, skillName },
             skillName,
           );
           if (decision === 'deny' || signal.aborted) {
