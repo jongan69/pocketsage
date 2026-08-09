@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketSage — On-Device AI Agent</title>
+<meta name="description" content="An AI agent that runs entirely on your phone. Llama 3.2 via ExecuTorch. Tool calling. RAG memory. Fully offline. MIT.">
+<meta property="og:title" content="PocketSage — On-Device AI Agent">
+<meta property="og:description" content="Your AI runs entirely on this phone. No cloud. No account. No data collection.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jongan69.github.io/pocketsage/">
+<style>
+  :root { --bg: #0a0a0a; --bg2: #141414; --bg3: #1c1c1c; --accent: #6366f1; --accent2: #4338ca; --t1: #f5f5f5; --t2: #a3a3a3; --t3: #525252; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 80px 0 60px; text-align: center; }
+  .logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 20px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; }
+  .logo-inner { width: 36px; height: 36px; background: var(--bg); border-radius: 10px; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+  .tagline { font-size: 20px; color: var(--t2); max-width: 500px; margin: 0 auto 32px; }
+  .badge { display: inline-block; background: var(--bg2); color: var(--accent); border: 1px solid var(--accent2); padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 600; margin: 4px; }
+
+  section { padding: 60px 0; }
+  h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px; }
+  h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  p { color: var(--t2); margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .card { background: var(--bg2); border-radius: 16px; padding: 24px; border: 1px solid var(--bg3); }
+  .card h3 { color: var(--t1); }
+  .card p { font-size: 14px; margin: 0; }
+  .card-icon { font-size: 28px; margin-bottom: 12px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--bg3); font-size: 14px; }
+  th { color: var(--t3); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  td { color: var(--t2); }
+  td:first-child { color: var(--t1); font-weight: 500; }
+
+  .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 100px; font-weight: 600; font-size: 15px; text-decoration: none; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: var(--bg2); color: var(--t1); border: 1px solid var(--bg3); }
+  .btn-ghost:hover { border-color: var(--t3); }
+
+  .divider { border: none; border-top: 1px solid var(--bg3); margin: 0; }
+
+  footer { padding: 40px 0; text-align: center; }
+  footer p { font-size: 13px; color: var(--t3); }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  .research-ref { font-size: 12px; color: var(--t3); margin-top: 4px; }
+  .research-ref a { color: var(--t3); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 32px; }
+    .tagline { font-size: 17px; }
+    header { padding: 48px 0 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="logo"><div class="logo-inner"></div></div>
+    <h1>PocketSage</h1>
+    <p class="tagline">Your AI runs entirely on this phone.<br>No cloud. No account. No data collection.</p>
+    <div>
+      <span class="badge">Llama 3.2</span>
+      <span class="badge">ExecuTorch</span>
+      <span class="badge">MIT</span>
+      <span class="badge">iOS + Android</span>
+    </div>
+    <div style="margin-top:28px" class="cta">
+      <a href="https://github.com/jongan69/pocketsage" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="https://github.com/jongan69/pocketsage/blob/main/README.md" class="btn btn-ghost">Read the Research →</a>
+    </div>
+  </div>
+</header>
+
+<hr class="divider">
+
+<section>
+  <div class="container">
+    <h2>What PocketSage Is</h2>
+    <p>An iOS and Android app where you chat with a local LLM that can <em>do things</em> — check your calendar, set reminders, read health data, search files and contacts. The model runs on your phone via ExecuTorch. Conversations and memories stay in a local vector database. Zero bytes leave the device.</p>
+
+    <div class="grid" style="margin-top:24px">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>On-Device LLM</h3>
+        <p>Llama 3.2 1B/3B SpinQuant runs locally via ExecuTorch. SHA-256 verified downloads from HuggingFace.</p>
+        <p class="research-ref"><a href="https://arxiv.org/abs/2405.16406">SpinQuant (ICLR 2025)</a></p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h3>Tool-Calling Agent</h3>
+        <p>ReAct-pattern loop: reason → act → observe. Calendar, reminders, health, files, contacts. SKILL.md-compatible.</p>
+        <p class="research-ref"><a href="https://arxiv.org/abs/2210.03629">ReAct (ICLR 2023)</a></p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💾</div>
+        <h3>RAG Memory</h3>
+        <p>Conversations chunked, embedded, and stored in a local vector database. Cross-session recall via GLOBAL.md.</p>
+        <p class="research-ref"><a href="https://github.com/software-mansion-labs/react-native-rag">react-native-rag (Software Mansion)</a></p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>Provably Private</h3>
+        <p>Zero network calls during inference. Revoke network permission after model download — the agent still works.</p>
+        <p class="research-ref"><a href="https://dl.acm.org/doi/10.1145/3724420">ACM Computing Surveys (2025)</a></p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>Cross-Platform</h3>
+        <p>iOS and Android from one codebase. Expo SDK 57, React Native 0.86, NativeWind dark theme.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Blazing Fast</h3>
+        <p>Single-flight generation queue, tier-cached models, streaming text. Frozen MTP acceleration on the roadmap.</p>
+        <p class="research-ref"><a href="https://research.google/blog/accelerating-gemini-nano-models-on-pixel-with-frozen-multi-token-prediction/">Frozen MTP (Google, 2026)</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section>
+  <div class="container">
+    <h2>Research Foundation</h2>
+    <p>PocketSage is built at the convergence of five research lines that crossed the feasibility threshold in 2025–2026:</p>
+    <table>
+      <tr><th>Research Line</th><th>Key Paper</th><th>What It Enabled</th></tr>
+      <tr><td>Quantization</td><td>SpinQuant (ICLR 2025)</td><td>Llama 3.2 runs on a phone at 2–4× faster</td></tr>
+      <tr><td>Speculative Decoding</td><td>EAGLE-3 (NeurIPS 2025), Frozen MTP (Google 2026)</td><td>50%+ inference speedup, bit-for-bit identical output</td></tr>
+      <tr><td>Agent Architecture</td><td>ReAct (ICLR 2023), OpenMinis (2026)</td><td>LLMs can reason → act → observe in a loop</td></tr>
+      <tr><td>Mobile Runtime</td><td>ExecuTorch 1.0 (Meta, 2025)</td><td>3.8× throughput, 87.7% lower startup latency</td></tr>
+      <tr><td>Privacy</td><td>ACM CSUR (2025), SoK (2026)</td><td>"No data leaves the device" is a provable guarantee</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section>
+  <div class="container">
+    <h2>vs. The Competition</h2>
+    <table>
+      <tr><th></th><th>PocketSage</th><th>Siri / Apple Intelligence</th><th>OpenMinis</th><th>Private Mind</th><th>ChatGPT</th></tr>
+      <tr><td>On-device LLM</td><td>✅ Llama 3.2</td><td>✅ Apple only</td><td>❌ Cloud API</td><td>✅ Multi-model</td><td>❌ Cloud</td></tr>
+      <tr><td>Truly offline</td><td>✅</td><td>⚠️ Partial</td><td>❌</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Tool calling</td><td>✅ Agent loop</td><td>⚠️ Intents</td><td>✅ Shell</td><td>❌</td><td>✅ Cloud</td></tr>
+      <tr><td>RAG memory</td><td>✅ GLOBAL.md</td><td>❌</td><td>✅</td><td>✅ PDF/doc</td><td>⚠️ Cloud</td></tr>
+      <tr><td>Open source</td><td>✅ MIT</td><td>❌</td><td>✅ GPLv3</td><td>✅ GPLv3</td><td>❌</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section>
+  <div class="container" style="text-align:center">
+    <h2>Built on Proven Infrastructure</h2>
+    <p style="max-width:600px;margin:0 auto 24px">The ExecuTorch bridge was extracted and generalized from <a href="https://prepaihq.com" style="color:var(--accent)">PrepAI</a>, a production on-device health AI app that proved Llama 3.2 runs reliably on mobile.</p>
+    <div class="cta">
+      <a href="https://github.com/jongan69/pocketsage" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>PocketSage · MIT License · <a href="https://github.com/jongan69/pocketsage">github.com/jongan69/pocketsage</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
