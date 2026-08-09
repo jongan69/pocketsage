@@ -1,4 +1,4 @@
-import * as Contacts from 'expo-contacts';
+import * as Contacts from 'expo-contacts/legacy';
 import type { Skill } from '@pocketsage/agent-runtime';
 
 async function requestPermission(): Promise<boolean> {
@@ -12,10 +12,10 @@ async function requestPermission(): Promise<boolean> {
   }
 }
 
-function formatContact(c: Contacts.Contact) {
+function formatContact(c: Contacts.ExistingContact) {
   return {
     id: c.id,
-    name: c.name,
+    name: c.name ?? '',
     firstName: c.firstName ?? null,
     lastName: c.lastName ?? null,
     company: c.company ?? null,
@@ -71,11 +71,12 @@ export const contactsSkill: Skill = {
           name: query as string,
           pageSize: 10,
         });
+        const contacts = (data ?? []).map(formatContact);
 
         return {
           query: query as string,
-          count: data.length,
-          contacts: data.map(formatContact),
+          count: contacts.length,
+          contacts,
         };
       },
     },
@@ -97,18 +98,16 @@ export const contactsSkill: Skill = {
         const permitted = await requestPermission();
         if (!permitted) throw new Error('Contacts permission not granted.');
 
-        const contact = await Contacts.getContactByIdAsync(contactId as string, {
-          fields: [
-            Contacts.Fields.Name,
-            Contacts.Fields.Company,
-            Contacts.Fields.JobTitle,
-            Contacts.Fields.PhoneNumbers,
-            Contacts.Fields.Emails,
-            Contacts.Fields.Addresses,
-            Contacts.Fields.Birthday,
-            Contacts.Fields.ImageAvailable,
-          ],
-        });
+        const contact = await Contacts.getContactByIdAsync(contactId as string, [
+          Contacts.Fields.Name,
+          Contacts.Fields.Company,
+          Contacts.Fields.JobTitle,
+          Contacts.Fields.PhoneNumbers,
+          Contacts.Fields.Emails,
+          Contacts.Fields.Addresses,
+          Contacts.Fields.Birthday,
+          Contacts.Fields.ImageAvailable,
+        ]);
 
         if (!contact) throw new Error(`Contact not found: ${contactId}`);
         return formatContact(contact);

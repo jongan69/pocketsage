@@ -21,6 +21,7 @@
     "expo-network": "*"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/node": "^18.19.0",
     "typescript": "~6.0.3"
   }

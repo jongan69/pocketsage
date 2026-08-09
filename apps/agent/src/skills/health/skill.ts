@@ -232,7 +232,7 @@ export const healthSkill: Skill = {
         requiresConfirmation: false,
       },
       execute: async (args) => {
-        const { metric, startDate, endDate } = args as HealthQueryParams;
+        const { metric, startDate, endDate } = args as unknown as HealthQueryParams;
         const start = new Date(startDate);
         const end = new Date(endDate);
 

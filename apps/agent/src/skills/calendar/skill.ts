@@ -1,4 +1,4 @@
-import * as Calendar from 'expo-calendar';
+import * as Calendar from 'expo-calendar/legacy';
 import { Platform } from 'react-native';
 import type { Skill } from '@pocketsage/agent-runtime';
 
@@ -72,8 +72,8 @@ export const calendarSkill: Skill = {
           events: events.map((e) => ({
             id: e.id,
             title: e.title,
-            startDate: e.startDate.toISOString(),
-            endDate: e.endDate.toISOString(),
+            startDate: new Date(e.startDate).toISOString(),
+            endDate: new Date(e.endDate).toISOString(),
             allDay: e.allDay,
             location: e.location || null,
             notes: e.notes || null,
@@ -116,7 +116,6 @@ export const calendarSkill: Skill = {
           endDate: new Date(endDate as string),
           notes: (notes as string) || '',
           location: (location as string) || '',
-          timeZone: Calendar.EntityTypes.EVENT ? undefined : undefined,
         });
 
         return {

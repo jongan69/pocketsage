@@ -1,4 +1,4 @@
-import * as Calendar from 'expo-calendar';
+import * as Calendar from 'expo-calendar/legacy';
 import { Platform } from 'react-native';
 import type { Skill } from '@pocketsage/agent-runtime';
 
@@ -69,8 +69,8 @@ export const remindersSkill: Skill = {
             reminders: events.map((e) => ({
               id: e.id,
               title: e.title,
-              dueDate: e.startDate?.toISOString() ?? null,
-              completed: e.endDate && e.endDate < now,
+              dueDate: e.startDate ? new Date(e.startDate).toISOString() : null,
+              completed: !!e.endDate && new Date(e.endDate) < now,
             })),
           };
         }
@@ -79,20 +79,23 @@ export const remindersSkill: Skill = {
         if (!permitted) throw new Error('Reminders permission not granted.');
 
         const reminders = await Calendar.getRemindersAsync(
-          null,
-          completed as boolean | undefined,
-          startDate ? new Date(startDate as string) : undefined,
-          endDate ? new Date(endDate as string) : undefined,
+          [null],
+          completed === undefined
+            ? null
+            : completed
+              ? Calendar.ReminderStatus.COMPLETED
+              : Calendar.ReminderStatus.INCOMPLETE,
+          startDate ? new Date(startDate as string) : null,
+          endDate ? new Date(endDate as string) : null,
         );
 
         return {
           reminders: reminders.map((r) => ({
             id: r.id,
             title: r.title,
-            completed: r.completed,
-            dueDate: r.dueDate?.toISOString() ?? null,
+            completed: r.completed ?? false,
+            dueDate: r.dueDate ? new Date(r.dueDate).toISOString() : null,
             notes: r.notes || null,
-            priority: r.priority || 'normal',
           })),
         };
       },
@@ -178,7 +181,10 @@ export const remindersSkill: Skill = {
         }
         const permitted = await requestReminderPermission();
         if (!permitted) throw new Error('Reminders permission not granted.');
-        await Calendar.completeReminderAsync(reminderId as string);
+        await Calendar.updateReminderAsync(reminderId as string, {
+          completed: true,
+          completionDate: new Date(),
+        });
         return { reminderId, completed: true };
       },
     },

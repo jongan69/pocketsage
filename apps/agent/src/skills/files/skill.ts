@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import type { Skill } from '@pocketsage/agent-runtime';
 
 const DOCUMENT_DIR = FileSystem.documentDirectory ?? '';
@@ -58,14 +58,15 @@ export const filesSkill: Skill = {
             entries.map(async (name) => {
               const fullPath = `${targetPath}${name}`;
               try {
-                const info = await FileSystem.getInfoAsync(fullPath, { size: true });
+                const info = await FileSystem.getInfoAsync(fullPath);
                 return {
                   name,
                   isDirectory: info.isDirectory ?? false,
-                  size: info.size ?? 0,
-                  modificationTime: info.modificationTime
-                    ? new Date(info.modificationTime * 1000).toISOString()
-                    : null,
+                  size: info.exists ? info.size : 0,
+                  modificationTime:
+                    info.exists && info.modificationTime
+                      ? new Date(info.modificationTime * 1000).toISOString()
+                      : null,
                 };
               } catch {
                 return { name, isDirectory: false, size: 0, modificationTime: null };

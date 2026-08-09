@@ -306,7 +306,7 @@ export function streamMessage(
   }
 
   const promise = enqueueGeneration(async (): Promise<GenerationResult> => {
-    if (stopped) throw new Error('Generation was stopped.');
+    if (stopped) throw new Error('Generation was cancelled.');
 
     if (!isExecutorchAvailable()) {
       const fallback =
