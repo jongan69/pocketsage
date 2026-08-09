@@ -190,10 +190,32 @@ Requires Expo SDK 57+, a native build with `react-native-executorch`, and a down
 | Project | What We Learned |
 |---|---|
 | **[PrepAI](https://prepaihq.com)** | On-device Llama 3.2 + ExecuTorch works in production. SHA-256 verified downloads. Single-flight queue. Token streaming. HealthKit integration. The ExecuTorch bridge in `packages/agent-runtime` was extracted and generalized from PrepAI's production AI stack. |
+| **[Private Mind](https://github.com/software-mansion-labs/private-mind)** | Production on-device AI chat by Software Mansion (the react-native-executorch team). Live on App Store + Google Play, GPLv3, ~343 stars. Model Hub with benchmarks, on-device Whisper STT, PDF document chat via `react-native-rag`. Proved the React Native + Expo + ExecuTorch stack works at production scale. PocketSage shares the exact same runtime foundation but diverges on product direction: Private Mind is a model playground, PocketSage is an agent. |
+| **[react-native-rag](https://github.com/software-mansion-labs/react-native-rag)** | Software Mansion's MIT-licensed on-device RAG library. Pluggable pipeline: TextSplitter → ExecuTorchEmbeddings (MiniLM) → VectorStore (in-memory or SQLite via `@react-native-rag/op-sqlite`) → ExecuTorchLLM. `useRAG` hook, `RAG` class, or direct component usage. 334 stars. PocketSage currently uses a custom RAG implementation; adopting `react-native-rag` as an optional backend is on the roadmap for PDF support and SQLite vector persistence. |
 | **[OpenMinis](https://github.com/OpenMinis/OpenMinis)** | Agent architecture on mobile: SKILL.md ecosystem, GLOBAL.md memory, 30+ native bridges, MCP integration. Proved the pattern works. PocketSage adopts the same architecture but adds on-device LLM inference (OpenMinis requires cloud API keys) and uses MIT license (OpenMinis is GPLv3). |
 | **[expo-ai-kit](https://github.com/EvanBacon/expo-ai)** | On-device AI as an Expo library call. Streaming, tool calling, RAG. PocketSage currently uses ExecuTorch instead of LiteRT-LM (different runtime, different models), but LiteRT-LM support is planned as an alternative backend (v0.4). |
 | **[Zero-Assist](https://devpost.com/software/zero-assist)** | Privacy-first Android on-device AI assistant. Rust AI core, local TTS, Spotify automation. Proved "100% offline AI assistant" resonates with users. |
 | **[callstack/agent-device](https://github.com/callstack/agent-device)** | AI-driven mobile testing. Accessibility-tree snapshots for token-efficient UI inspection. PocketSage uses this for CI testing. |
+
+### PocketSage × Private Mind: Complementary, Not Competitive
+
+Both projects run on the exact same foundation: React Native + Expo + `react-native-executorch`. But they made different bets about what to build on top:
+
+| | Private Mind | PocketSage |
+|---|---|---|
+| **Runtime** | react-native-executorch | react-native-executorch |
+| **License** | GPLv3 | MIT |
+| **Product thesis** | "Which models run on your phone?" | "What can those models *do*?" |
+| **Core loop** | Prompt → response | Prompt → reason → tool call → observe → respond |
+| **Models** | LLaMA, Qwen, SmolLM, Phi + custom upload | Llama 3.2 1B/3B SpinQuant |
+| **Model UX** | Model Hub with benchmarks, compare mode | Auto-select per task, download-once |
+| **RAG** | `react-native-rag` (SQLite vectors + PDF) | Custom vector store + GLOBAL.md |
+| **Speech** | On-device Whisper STT | Roadmap v0.3 |
+| **Agent** | ❌ | ✅ ReAct loop, 5 skills, SKILL.md |
+| **Memory** | Stateless chat | Cross-session vector + fact memory |
+| **App Store** | ✅ Live since 2025 | Pre-submission |
+
+The relationship is symbiotic: Private Mind validates the runtime. PocketSage extends the paradigm. Someone could use Private Mind to benchmark which model runs best on their phone, then use PocketSage to put that model to work. PocketSage may adopt `react-native-rag` (MIT) as an optional RAG backend, and both projects benefit from improvements to the shared `react-native-executorch` foundation.
 
 ---
 
@@ -231,7 +253,9 @@ Requires Expo SDK 57+, a native build with `react-native-executorch`, and a down
 ### Production Systems
 12. Meta. (2024). **"Llama 3.2: Revolutionizing edge AI and vision with open, customizable models."** [[blog]](https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/)
 13. Software Mansion. (2025–2026). **"react-native-executorch."** [[GitHub]](https://github.com/software-mansion/react-native-executorch)
-14. Bacon, E. (2025). **"expo-ai-kit: Use on-device AI models inside Expo apps."** [[docs]](https://expo-ai-kit.dev)
+14. Software Mansion. (2025–2026). **"react-native-rag: Private, local RAGs for React Native."** [[GitHub]](https://github.com/software-mansion-labs/react-native-rag) [[docs]](https://software-mansion-labs.github.io/react-native-rag/)
+15. Software Mansion. (2025–2026). **"Private Mind: Offline-first, on-device AI chat app."** [[GitHub]](https://github.com/software-mansion-labs/private-mind) [[App Store]](https://apps.apple.com/app/private-mind/id6746713439)
+16. Bacon, E. (2025). **"expo-ai-kit: Use on-device AI models inside Expo apps."** [[docs]](https://expo-ai-kit.dev)
 
 ---
 
