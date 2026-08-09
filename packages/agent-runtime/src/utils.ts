@@ -19,6 +19,12 @@ export interface ReadWriteFileSystem {
   readFile(path: string): Promise<string>;
   /** Write a UTF-8 string to a file, creating parent directories as needed. */
   writeFile(path: string, content: string): Promise<void>;
+  /**
+   * List the direct children of a directory (names only, not paths).
+   * Optional — required only by directory-scanning features such as
+   * `loadSkillsFromDirectory`.
+   */
+  readDir?(path: string): Promise<string[]>;
 }
 
 const NODE_FS_SPECIFIER = 'node:' + 'fs/promises'; // computed — keeps bundlers from statically resolving it
@@ -82,9 +88,19 @@ export function getNodeFileSystemOrNull(): ReadWriteFileSystem | null {
   const nodeVersion = g.process?.versions?.node;
   if (!nodeVersion) return null;
 
-  let fsPromise: Promise<{ readFile: Function; writeFile: Function; mkdir: Function }> | null = null;
+  let fsPromise: Promise<{
+    readFile: Function;
+    writeFile: Function;
+    mkdir: Function;
+    readdir: Function;
+  }> | null = null;
 
-  const loadFs = (): Promise<{ readFile: Function; writeFile: Function; mkdir: Function }> => {
+  const loadFs = (): Promise<{
+    readFile: Function;
+    writeFile: Function;
+    mkdir: Function;
+    readdir: Function;
+  }> => {
     if (fsPromise) return fsPromise;
     fsPromise = (async () => {
       if (typeof g.process?.getBuiltinModule === 'function') {
@@ -92,12 +108,14 @@ export function getNodeFileSystemOrNull(): ReadWriteFileSystem | null {
           readFile: Function;
           writeFile: Function;
           mkdir: Function;
+          readdir: Function;
         };
       }
       const mod = (await import(NODE_FS_SPECIFIER)) as {
         readFile: Function;
         writeFile: Function;
         mkdir: Function;
+        readdir: Function;
       };
       return mod;
     })();
@@ -117,6 +135,12 @@ export function getNodeFileSystemOrNull(): ReadWriteFileSystem | null {
         // directory may already exist — the write below will surface real errors
       }
       await fs.writeFile(path, content, 'utf8');
+    },
+    async readDir(path: string): Promise<string[]> {
+      const fs = await loadFs();
+      return await fs.readdir(path, { withFileTypes: true }).then((dirents: { name: string }[]) =>
+        dirents.map((d) => d.name),
+      );
     },
   };
 }
@@ -148,6 +172,17 @@ export function createDefaultFileSystem(): ReadWriteFileSystem {
     },
     async writeFile(path: string, content: string): Promise<void> {
       files.set(path, content);
+    },
+    async readDir(path: string): Promise<string[]> {
+      const prefix = path.endsWith('/') ? path : path + '/';
+      const children = new Set<string>();
+      for (const key of files.keys()) {
+        if (!key.startsWith(prefix)) continue;
+        const rest = key.slice(prefix.length);
+        const firstSegment = rest.split('/')[0];
+        if (firstSegment) children.add(firstSegment);
+      }
+      return Array.from(children);
     },
   };
 }
