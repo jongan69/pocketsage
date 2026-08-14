@@ -228,7 +228,7 @@ export class MemoryManager {
 
   /** Absolute path of the `GLOBAL.md` fact file. */
   private globalMdPath(): string {
-    const trimmed = this.globalMemoryPath.replace(/[\\/]+$/, '');
+    const trimmed = stripTrailingPathSeparators(this.globalMemoryPath);
     // Accept both a path to the GLOBAL.md file itself and a directory that
     // contains it (different callers pass one or the other).
     return trimmed.endsWith(GLOBAL_MD_FILE) ? trimmed : joinPath(trimmed, GLOBAL_MD_FILE);
@@ -238,4 +238,12 @@ export class MemoryManager {
   private vectorStorePath(): string {
     return joinPath(dirname(this.globalMdPath()), VECTOR_STORE_FILE);
   }
+}
+
+function stripTrailingPathSeparators(value: string): string {
+  let end = value.length;
+  while (end > 0 && (value[end - 1] === '/' || value[end - 1] === '\\')) {
+    end -= 1;
+  }
+  return value.slice(0, end);
 }

@@ -11,14 +11,6 @@ const DEFAULT_MAX_CHUNK_SIZE = 500;
 const DEFAULT_OVERLAP = 50;
 
 /**
- * Sentence delimiters: `.`, `!`, `?`, newline, and the CJK full stop `。`.
- * A "sentence" is a run of non-delimiter characters followed by one or more
- * delimiters (plus trailing whitespace), or a trailing run of non-delimiter
- * characters at the end of the input.
- */
-const SENTENCE_REGEX = /[^.!?\n。]*[.!?\n。]+[ \t\r]*|[^.!?\n。]+$/g;
-
-/**
  * Split text into sentence-aware chunks for embedding and retrieval.
  *
  * Chunks are built greedily from sentences. A new chunk starts at the most
@@ -98,11 +90,32 @@ export function chunkText(text: string, options?: Partial<ChunkOptions>): string
  * Split text into sentence pieces, preserving the delimiters.
  */
 function splitIntoSentences(text: string): string[] {
-  const matches = text.match(SENTENCE_REGEX);
-  if (!matches || matches.length === 0) {
-    return [text];
+  const pieces: string[] = [];
+  let start = 0;
+  let index = 0;
+
+  while (index < text.length) {
+    if (!isSentenceDelimiter(text[index])) {
+      index += 1;
+      continue;
+    }
+    index += 1;
+    while (index < text.length && isSentenceDelimiter(text[index])) index += 1;
+    while (
+      index < text.length &&
+      (text[index] === ' ' || text[index] === '\t' || text[index] === '\r')
+    ) {
+      index += 1;
+    }
+    pieces.push(text.slice(start, index));
+    start = index;
   }
-  return matches;
+  if (start < text.length) pieces.push(text.slice(start));
+  return pieces.length > 0 ? pieces : [text];
+}
+
+function isSentenceDelimiter(value: string): boolean {
+  return value === '.' || value === '!' || value === '?' || value === '\n' || value === '。';
 }
 
 /**

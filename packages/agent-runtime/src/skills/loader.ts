@@ -332,7 +332,7 @@ function extractKeywords(...sources: string[]): string[] {
   const keywords: string[] = [];
   for (const source of sources) {
     for (const raw of source.split(/[^A-Za-z0-9_'.-]+/)) {
-      const word = raw.toLowerCase().replace(/^['.-]+|['.-]+$/g, '');
+      const word = trimKeywordPunctuation(raw.toLowerCase());
       if (word.length < 3 || STOPWORDS.has(word)) continue;
       if (seen.has(word)) continue;
       seen.add(word);
@@ -340,6 +340,18 @@ function extractKeywords(...sources: string[]): string[] {
     }
   }
   return keywords;
+}
+
+function trimKeywordPunctuation(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && isKeywordPunctuation(value[start])) start += 1;
+  while (end > start && isKeywordPunctuation(value[end - 1])) end -= 1;
+  return value.slice(start, end);
+}
+
+function isKeywordPunctuation(value: string): boolean {
+  return value === "'" || value === '.' || value === '-';
 }
 
 /** Common English stopwords excluded from keyword extraction. */

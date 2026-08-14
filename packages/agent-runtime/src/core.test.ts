@@ -11,6 +11,7 @@ import { parseToolCalls, extractJson, validateJsonSchema } from './inference/par
 import { buildSystemPrompt } from './inference/prompts';
 import { getModelForRamBudget, getRecommendedModel } from './models/catalog';
 import { enqueueGeneration, resetGenerationQueue } from './inference/queue';
+import { chunkText } from './rag/chunker';
 
 // ── parseToolCalls ─────────────────────────────────────────────────────────────
 
@@ -212,5 +213,14 @@ describe('enqueueGeneration', () => {
       'boom',
     );
     await expect(enqueueGeneration(async () => 'ok')).resolves.toBe('ok');
+  });
+});
+
+describe('chunkText', () => {
+  test('splits repetitive delimiter input in linear time', () => {
+    const text = `${'.'.repeat(20_000)} ${'word '.repeat(2_000)}`;
+    const chunks = chunkText(text, { maxChunkSize: 256, overlap: 32 });
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.every((chunk) => chunk.length <= 256)).toBe(true);
   });
 });
