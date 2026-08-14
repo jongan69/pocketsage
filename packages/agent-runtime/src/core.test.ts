@@ -223,4 +223,9 @@ describe('chunkText', () => {
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((chunk) => chunk.length <= 256)).toBe(true);
   });
+
+  test('keeps Windows line endings with the preceding sentence', () => {
+    const chunks = chunkText('X?A.\r\nB', { maxChunkSize: 4, overlap: 0 });
+    expect(chunks).toEqual(['X?', 'A.\r\n', 'B']);
+  });
 });

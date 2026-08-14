@@ -5,7 +5,7 @@
   "scripts": {
     "typecheck": "bun run --cwd packages/agent-runtime typecheck && bun run --cwd apps/agent typecheck",
     "lint": "cd apps/agent && bun run lint",
-    "test": "cd packages/agent-runtime && bun test && cd ../../apps/agent && bun test --pass-with-no-tests",
+    "test": "cd packages/agent-runtime && bun test && cd ../../apps/agent && bun run test --passWithNoTests",
     "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules",
     "dev": "cd apps/agent && bun run dev",
     "dev:ios": "cd apps/agent && bun run ios",

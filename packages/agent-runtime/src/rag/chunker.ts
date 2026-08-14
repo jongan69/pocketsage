@@ -100,10 +100,12 @@ function splitIntoSentences(text: string): string[] {
       continue;
     }
     index += 1;
-    while (index < text.length && isSentenceDelimiter(text[index])) index += 1;
     while (
       index < text.length &&
-      (text[index] === ' ' || text[index] === '\t' || text[index] === '\r')
+      (isSentenceDelimiter(text[index]) ||
+        text[index] === ' ' ||
+        text[index] === '\t' ||
+        text[index] === '\r')
     ) {
       index += 1;
     }
