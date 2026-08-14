@@ -205,7 +205,11 @@ export function createResourceFetcher(
   storagePrefix: string,
   options: CreateResourceFetcherOptions = {},
 ): ResourceFetcher {
-  const normalizedPrefix = storagePrefix.replace(/^\/+|\/+$/g, '');
+  let prefixStart = 0;
+  let prefixEnd = storagePrefix.length;
+  while (prefixStart < prefixEnd && storagePrefix[prefixStart] === '/') prefixStart += 1;
+  while (prefixEnd > prefixStart && storagePrefix[prefixEnd - 1] === '/') prefixEnd -= 1;
+  const normalizedPrefix = storagePrefix.slice(prefixStart, prefixEnd);
   if (normalizedPrefix.length === 0) {
     throw new Error('createResourceFetcher: storagePrefix must not be empty.');
   }
